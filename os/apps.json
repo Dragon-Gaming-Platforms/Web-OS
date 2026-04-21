@@ -5,7 +5,7 @@
         "path": "apps/preinstalled/file-explorer.html",
         "category": "System",
         "preinstalled": true,
-        "icon": "📂"
+        "icon": "📂" 
     },
     {
         "id": "html-editor",
