@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WebVM Terminal</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            width: 100%;
+            height: 100vh;
+            overflow: hidden;
+            background: #000;
+        }
+        
+        #webvm-frame {
+            width: 100%;
+            height: 100%;
+            border: none;
+            display: block;
+        }
+        
+        #loading {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: #0f0;
+            font-family: monospace;
+            font-size: 16px;
+            text-align: center;
+        }
+        
+        #loading.hidden {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div id="loading">
+        <p>Loading WebVM Terminal...</p>
+        <p style="margin-top: 10px; font-size: 12px;">Please wait...</p>
+    </div>
+    
+    <iframe 
+        id="webvm-frame"
+        src="../../index.html"
+        allow="cross-origin-isolated; clipboard-read; clipboard-write"
+        style="opacity: 0; transition: opacity 0.3s;">
+    </iframe>
+    
+    <script>
+        // Hide loading when iframe loads
+        const frame = document.getElementById('webvm-frame');
+        const loading = document.getElementById('loading');
+        
+        frame.addEventListener('load', () => {
+            loading.classList.add('hidden');
+            frame.style.opacity = '1';
+        });
+        
+        // Timeout fallback
+        setTimeout(() => {
+            loading.classList.add('hidden');
+            frame.style.opacity = '1';
+        }, 5000);
+    </script>
+</body>
+</html>
