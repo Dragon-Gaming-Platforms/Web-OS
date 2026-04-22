@@ -578,13 +578,22 @@ async function silentUpdateAppList() {
                         let customIcon = iconMap[baseName] || null;
                         // ==========================
 
+                        // ✅ FIX: Remove 'os/' prefix from file.path since it's already in the URL
+                        // GitHub API returns: "os/apps/store/app.html"
+                        // We want: "apps/store/app.html"
+                        let fixedPath = file.path.startsWith('os/') ? file.path.substring(3) : file.path;
+
                         if(folder === 'browsers') { 
-                            newEngines.push({ id: baseName, name: title, path: file.path }); 
+                            newEngines.push({ 
+                                id: baseName, 
+                                name: title, 
+                                path: fixedPath 
+                            }); 
                         } else { 
                             newRegistry.push({ 
                                 id: baseName, 
                                 name: title, 
-                                path: file.path, 
+                                path: fixedPath, 
                                 category: defaultCategory, 
                                 preinstalled: isPreinstalled, 
                                 icon: customIcon 
@@ -611,6 +620,28 @@ async function silentUpdateAppList() {
     } catch(e) { 
         console.warn("Silent app scan failed:", e); 
     }
+}
+
+async function checkForGitHubUpdates() {
+    try {
+        const host = window.location.hostname;
+        if (!host.includes('github.io')) return;
+        
+        const user = host.split('.')[0];
+        const pathParts = window.location.pathname.split('/').filter(p => p.length > 0);
+        const repo = pathParts.length > 0 ? pathParts[0] : host;
+        
+        const res = await fetch(`https://api.github.com/repos/${user}/${repo}/commits?per_page=1`);
+        const data = await res.json();
+        if (data && data.length > 0) {
+            const latestCommit = data[0];
+            const savedSha = localStorage.getItem('gh_last_commit_sha');
+            if (savedSha && savedSha !== latestCommit.sha) {
+                showNotification("Update Available:", `${latestCommit.commit.message}<br><br>Reload your OS to update.`);
+            }
+            localStorage.setItem('gh_last_commit_sha', latestCommit.sha);
+        }
+    } catch(e) { }
 }
 
 async function checkForGitHubUpdates() {
