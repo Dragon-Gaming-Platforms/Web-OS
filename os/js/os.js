@@ -551,7 +551,7 @@ async function silentUpdateAppList() {
         let newEngines = [];
         
         const fetchFolder = async (folder, isPreinstalled, defaultCategory) => {
-            const res = await fetch(`https://api.github.com/repos/${user}/${repo}/contents/apps/${folder}`);
+            const res = await fetch(`https://api.github.com/repos/${user}/${repo}/contents/os/apps/${folder}`);
             if (res.ok) {
                 const files = await res.json();
                 for(let file of files) {
@@ -571,7 +571,9 @@ async function silentUpdateAppList() {
                             'ai-assistant': '🤖',
                             'messages': '💬',
                             'html-editor': '</>',
-                            'github-importer': '📥'
+                            'github-importer': '📥',
+                            'java-runner': '☕',
+                            'vfs-viewer': '📁'
                         };
                         let customIcon = iconMap[baseName] || null;
                         // ==========================
@@ -613,7 +615,14 @@ async function silentUpdateAppList() {
 
 async function checkForGitHubUpdates() {
     try {
-        const res = await fetch('https://api.github.com/repos/Dragon-Gaming-Platforms/Web-Operating-System/commits?per_page=1');
+        const host = window.location.hostname;
+        if (!host.includes('github.io')) return;
+        
+        const user = host.split('.')[0];
+        const pathParts = window.location.pathname.split('/').filter(p => p.length > 0);
+        const repo = pathParts.length > 0 ? pathParts[0] : host;
+        
+        const res = await fetch(`https://api.github.com/repos/${user}/${repo}/commits?per_page=1`);
         const data = await res.json();
         if (data && data.length > 0) {
             const latestCommit = data[0];
