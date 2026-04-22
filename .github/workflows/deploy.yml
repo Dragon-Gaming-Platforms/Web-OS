@@ -193,24 +193,21 @@ jobs:
           echo "OS files deployed:"
           ls -la $DEPLOY_DIR/os/
 
-      - name: Add SharedArrayBuffer support (COOP/COEP)
+      - name: Add SharedArrayBuffer support
         run: |
           cd $DEPLOY_DIR
           
-          # Download coi-serviceworker for SharedArrayBuffer support
+          # Download coi-serviceworker
           sudo wget -q https://raw.githubusercontent.com/gzuidhof/coi-serviceworker/master/coi-serviceworker.js
           
-          # Add to WebVM index.html (terminal)
+          # Add ONLY to WebVM index.html (NOT to OS)
           if [ -f index.html ]; then
             sudo sed -i 's|</head>|<script src="coi-serviceworker.js"></script></head>|' index.html
-            echo "Added COOP/COEP to WebVM"
+            echo "Added COOP/COEP to WebVM only"
           fi
           
-          # Add to OS index.html
-          if [ -f os/index.html ]; then
-            sudo sed -i 's|</head>|<script src="../coi-serviceworker.js"></script></head>|' os/index.html
-            echo "Added COOP/COEP to Dragon OS"
-          fi
+          # DO NOT add to OS - it breaks JSONP requests
+          echo "Skipping OS COOP/COEP injection (preserves JSONP)"
 
       - name: Create OS entry point redirect (optional)
         run: |
