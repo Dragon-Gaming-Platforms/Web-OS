@@ -178,7 +178,7 @@ jobs:
 
       - name: Integrate Dragon OS
         run: |
-          # Remove alpine version (we don't need it)
+          # Remove alpine version
           rm -f build/alpine.html
           
           # Copy WebVM build to deploy directory
@@ -192,8 +192,9 @@ jobs:
           # Verify OS files copied
           echo "OS files deployed:"
           ls -la $DEPLOY_DIR/os/
-                - name: Add SharedArrayBuffer support
-          run: |
+
+      - name: Add SharedArrayBuffer support
+        run: |
           cd $DEPLOY_DIR
           
           # Create custom coi-serviceworker with credentialless mode
