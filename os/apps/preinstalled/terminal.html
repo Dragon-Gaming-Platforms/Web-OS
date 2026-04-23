@@ -4,27 +4,31 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>WebVM Terminal</title>
+    
+    <!-- Custom coi-serviceworker with credentialless mode -->
+    <script>
+    /*! coi-serviceworker v0.1.7 - credentialless mode */
+    if(typeof window==='undefined'){(async()=>{const e=self;e.addEventListener("install",(()=>{e.skipWaiting()})),e.addEventListener("activate",(t=>t.waitUntil(e.clients.claim())));const t=async t=>{if("navigate"===t.request.mode){const r=await fetch(t.request);if(r.redirected){const e=new Response(r.body,{status:200,statusText:"OK",headers:r.headers});return e.headers.set("Cross-Origin-Embedder-Policy","credentialless"),e.headers.set("Cross-Origin-Opener-Policy","same-origin"),e}return r.headers.set("Cross-Origin-Embedder-Policy","credentialless"),r.headers.set("Cross-Origin-Opener-Policy","same-origin"),r}return fetch(t.request)};e.addEventListener("fetch",(e=>e.respondWith(t(e))))})()}else{(()=>{const e={shouldRegister:()=>!0,shouldDeregister:()=>!1,doReload:()=>window.location.reload(),quiet:!1,...window.coi};navigator.serviceWorker&&navigator.serviceWorker.controller&&navigator.serviceWorker.controller.scriptURL.indexOf("coi-serviceworker")>-1?e.shouldDeregister()&&(navigator.serviceWorker.controller.postMessage({type:"deregister"}),e.quiet||console.log("Deregistering coi-serviceworker"),setTimeout((()=>{e.doReload()}),500)):e.shouldRegister()&&(navigator.serviceWorker.register(window.document.currentScript.src).then((t=>{!e.quiet&&console.log("COOP/COEP Service Worker registered",t.scope),t.addEventListener("updatefound",(()=>{!e.quiet&&console.log("Reloading page to make use of updated COOP/COEP Service Worker."),e.doReload()})),t.active&&!navigator.serviceWorker.controller&&e.doReload()}),(t=>{!e.quiet&&console.error("COOP/COEP Service Worker failed to register:",t)}))})()}
+    </script>
+    
     <style>
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
         }
-        
         body {
             width: 100%;
             height: 100vh;
             overflow: hidden;
             background: #000;
         }
-        
         #webvm-frame {
             width: 100%;
             height: 100%;
             border: none;
             display: block;
         }
-        
         #loading {
             position: absolute;
             top: 50%;
@@ -35,7 +39,6 @@
             font-size: 16px;
             text-align: center;
         }
-        
         #loading.hidden {
             display: none;
         }
@@ -43,19 +46,20 @@
 </head>
 <body>
     <div id="loading">
-        <p>Loading WebVM Terminal...</p>
-        <p style="margin-top: 10px; font-size: 12px;">Please wait...</p>
+        <p>⚡ Loading WebVM Terminal...</p>
+        <p style="margin-top: 10px; font-size: 12px; color: #888;">
+            First load may take a moment
+        </p>
     </div>
     
     <iframe 
         id="webvm-frame"
-        src="../../index.html"
-        allow="cross-origin-isolated; clipboard-read; clipboard-write"
-        style="opacity: 0; transition: opacity 0.3s;">
+        src="../../../index.html"
+        allow="cross-origin-isolated"
+        style="opacity: 0; transition: opacity 0.5s;">
     </iframe>
     
     <script>
-        // Hide loading when iframe loads
         const frame = document.getElementById('webvm-frame');
         const loading = document.getElementById('loading');
         
@@ -64,11 +68,10 @@
             frame.style.opacity = '1';
         });
         
-        // Timeout fallback
         setTimeout(() => {
             loading.classList.add('hidden');
             frame.style.opacity = '1';
-        }, 5000);
+        }, 8000);
     </script>
 </body>
 </html>

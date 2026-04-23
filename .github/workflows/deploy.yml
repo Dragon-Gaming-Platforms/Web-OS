@@ -192,22 +192,24 @@ jobs:
           # Verify OS files copied
           echo "OS files deployed:"
           ls -la $DEPLOY_DIR/os/
-
-      - name: Add SharedArrayBuffer support
-        run: |
+                - name: Add SharedArrayBuffer support
+          run: |
           cd $DEPLOY_DIR
           
-          # Download coi-serviceworker
-          sudo wget -q https://raw.githubusercontent.com/gzuidhof/coi-serviceworker/master/coi-serviceworker.js
+          # Create custom coi-serviceworker with credentialless mode
+          cat > coi-serviceworker.js << 'EOF'
+          /*! coi-serviceworker v0.1.7 - Guido Zuidhof and contributors, licensed under MIT */
+          if(typeof window==='undefined'){(async()=>{const e=self;e.addEventListener("install",(()=>{e.skipWaiting()})),e.addEventListener("activate",(t=>t.waitUntil(e.clients.claim())));const t=async t=>{if("navigate"===t.request.mode){const r=await fetch(t.request);if(r.redirected){const e=new Response(r.body,{status:200,statusText:"OK",headers:r.headers});return e.headers.set("Cross-Origin-Embedder-Policy","credentialless"),e.headers.set("Cross-Origin-Opener-Policy","same-origin"),e}return r.headers.set("Cross-Origin-Embedder-Policy","credentialless"),r.headers.set("Cross-Origin-Opener-Policy","same-origin"),r}return fetch(t.request)};e.addEventListener("fetch",(e=>e.respondWith(t(e))))})()}else{(()=>{const e={shouldRegister:()=>!0,shouldDeregister:()=>!1,doReload:()=>window.location.reload(),quiet:!1,...window.coi};navigator.serviceWorker&&navigator.serviceWorker.controller&&navigator.serviceWorker.controller.scriptURL.indexOf("coi-serviceworker")>-1?e.shouldDeregister()&&(navigator.serviceWorker.controller.postMessage({type:"deregister"}),e.quiet||console.log("Deregistering coi-serviceworker"),setTimeout((()=>{e.doReload()}),500)):e.shouldRegister()&&(navigator.serviceWorker.register(window.document.currentScript.src).then((t=>{!e.quiet&&console.log("COOP/COEP Service Worker registered",t.scope),t.addEventListener("updatefound",(()=>{!e.quiet&&console.log("Reloading page to make use of updated COOP/COEP Service Worker."),e.doReload()})),t.active&&!navigator.serviceWorker.controller&&e.doReload()}),(t=>{!e.quiet&&console.error("COOP/COEP Service Worker failed to register:",t)}))})()}
+          EOF
           
           # Add ONLY to WebVM index.html (NOT to OS)
           if [ -f index.html ]; then
             sudo sed -i 's|</head>|<script src="coi-serviceworker.js"></script></head>|' index.html
-            echo "Added COOP/COEP to WebVM only"
+            echo "Added COEP:credentialless to WebVM only"
           fi
           
-          # DO NOT add to OS - it breaks JSONP requests
-          echo "Skipping OS COOP/COEP injection (preserves JSONP)"
+          # DO NOT add to OS - it breaks external iframes
+          echo "OS will load without COEP (allows external content)"
 
       - name: Create OS entry point redirect (optional)
         run: |
