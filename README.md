@@ -1,7 +1,5 @@
 # Dragon Gaming Platforms
 ## Web OS
-
-
 <img src="/os/assets/images/dragon-login.png" width="90%">
 
 
