@@ -1,6 +1,6 @@
 <h1 align="center">Fireburst OS</h1>
 <div align="center">
-  <img src="os/assets/images/dragon-login.png" height="475" />
+  <img src="os/assets/images/dragon-login.png" height="425" />
 </div>
 
 
@@ -31,7 +31,7 @@ Try out the new Alpine / Xorg / i3 graphical environment: [https://webvm.io/alpi
 
 WebVM is a server-less virtual environment running fully client-side in HTML5/WebAssembly. It's designed to be Linux ABI-compatible. It runs an unmodified Debian distribution including many native development toolchains.
 
-WebVM is powered by the CheerpX virtualization engine, and enables safe, sandboxed client-side execution of x86 binaries on any browser. CheerpX includes an x86-to-WebAssembly JIT compiler, a virtual block-based file system, and a Linux syscall emulator. 
+WebVM is powered by the CheerpX virtualization engine, and enables safe, sandboxed client-side execution of x86 binaries on any browser. CheerpX includes an2x86-to-WebAssembly JIT compiler, a virtual block-based file system, and a Linux syscall emulator. 
 
 ## Table of Contents
 
