@@ -4,8 +4,10 @@
   <img src="os/assets/images/dragon-login.png" height="425" />
 </div>
 
-#### This is a 100% static repository that can be deployed from the root/ folder by GitHub Pages
+#### Deployment
+This is a static repository and therefore can be hosted on GitHub Pages by GitHub actions. Simply navigate to [.github/workflows/deploy.yml](.github/workflows/deploy.yml) and execute the workflow! Configuration is ```debian_mini``` ```950MB``` and - [x] deploy to pages 
 
+## Backend Configuration
 Unfortunately, due to security restricions I cannot share the backend URL that I use. it is hosted on [Google Apps Scripts](https://script.google.com).
 
 
