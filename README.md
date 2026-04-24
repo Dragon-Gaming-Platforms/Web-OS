@@ -11,7 +11,7 @@
 
 
 ## Deployment
-This is a static repository and therefore can be hosted on GitHub Pages by GitHub actions. Simply navigate to [.github/workflows/deploy.yml](.github/workflows/deploy.yml) and execute the workflow! Configuration for the workflow is ```debian_mini``` ```950MB``` and
+This is a static repository and therefore can be hosted on GitHub Pages by GitHub actions. Simply navigate to [.github/workflows/deploy.yml](.github/workflows/deploy.yml) and execute [the workflow](.github/workflows/deploy.yml)! Configuration for the workflow is ```debian_mini``` ```950MB``` and
  - [x] deploy to pages 
  - [ ] update pages deployment
 #### Backend Configuration
