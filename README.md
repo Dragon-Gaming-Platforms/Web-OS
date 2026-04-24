@@ -6,9 +6,17 @@
 
 ## Table of Contents
 
+- [Introduction](#Introduction)
+- [Features](#Features)
 - [Deploy](#Deployment)
 - [Configure Backend](#Backend)
 
+## Introduction
+
+This repository hosts a branch of [WebVM](https://github.com/leaningtech/Webvm) with [Fireburst OS](https://github.com/Dragon-Gaming-Platforms/Web-Operating-System/), located in the [os/](os/) folder.
+
+## Features
+[WebVM](https://github.com/leaningtech/webvm/) is used to run the Terminal app in the OS and [cheerpj](https://github.com/leaningtech/cheerpj/) is used to run the Java Runner app.
 
 ## Deployment
 This is a static repository and therefore can be hosted on GitHub Pages by GitHub actions. Simply navigate to [.github/workflows/deploy.yml](.github/workflows/deploy.yml) and execute [the workflow](.github/workflows/deploy.yml)! Configuration for the workflow is ```debian_mini``` ```950MB``` and
