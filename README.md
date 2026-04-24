@@ -7,7 +7,7 @@
 ## Table of Contents
 
 - [Deploy](#Deployment)
-- [Configure Backend](#Backend Configuration)
+- [Configure Backend](#Backend)
 
 
 ## Deployment
