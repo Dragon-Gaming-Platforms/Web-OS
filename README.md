@@ -6,7 +6,7 @@
 
 #### This is a 100% static repository that can be deployed from the root/ folder by GitHub Pages
 
-Unfortunately, due to security restricions I cannot share the backend URL myself. it is hosted on [Google Apps Scripts](https://script.google.com).
+Unfortunately, due to security restricions I cannot share the backend URL that I use. it is hosted on [Google Apps Scripts](https://script.google.com).
 
 
 
