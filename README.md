@@ -9,7 +9,11 @@ This is a static repository and therefore can be hosted on GitHub Pages by GitHu
  - [x] deploy to pages 
  - [ ] update pages deployment
 #### Backend Configuration
-Unfortunately, due to security restricions I cannot share the backend URL that I use. it is hosted on [Google Apps Scripts](https://script.google.com).
+Unfortunately, due to security restricions I cannot share the backend URL that I use. It is hosted on [Google Apps Scripts](https://script.google.com) and is therefore easy to deploy.
+
+```Google apps scripts
+
+
 
 
 
