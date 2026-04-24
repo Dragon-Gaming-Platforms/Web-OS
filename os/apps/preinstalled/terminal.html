@@ -5,57 +5,79 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>WebVM Terminal</title>
     
-    <!-- Custom coi-serviceworker with credentialless mode -->
-    <script>
-    /*! coi-serviceworker v0.1.7 - credentialless mode */
-    if(typeof window==='undefined'){(async()=>{const e=self;e.addEventListener("install",(()=>{e.skipWaiting()})),e.addEventListener("activate",(t=>t.waitUntil(e.clients.claim())));const t=async t=>{if("navigate"===t.request.mode){const r=await fetch(t.request);if(r.redirected){const e=new Response(r.body,{status:200,statusText:"OK",headers:r.headers});return e.headers.set("Cross-Origin-Embedder-Policy","credentialless"),e.headers.set("Cross-Origin-Opener-Policy","same-origin"),e}return r.headers.set("Cross-Origin-Embedder-Policy","credentialless"),r.headers.set("Cross-Origin-Opener-Policy","same-origin"),r}return fetch(t.request)};e.addEventListener("fetch",(e=>e.respondWith(t(e))))})()}else{(()=>{const e={shouldRegister:()=>!0,shouldDeregister:()=>!1,doReload:()=>window.location.reload(),quiet:!1,...window.coi};navigator.serviceWorker&&navigator.serviceWorker.controller&&navigator.serviceWorker.controller.scriptURL.indexOf("coi-serviceworker")>-1?e.shouldDeregister()&&(navigator.serviceWorker.controller.postMessage({type:"deregister"}),e.quiet||console.log("Deregistering coi-serviceworker"),setTimeout((()=>{e.doReload()}),500)):e.shouldRegister()&&(navigator.serviceWorker.register(window.document.currentScript.src).then((t=>{!e.quiet&&console.log("COOP/COEP Service Worker registered",t.scope),t.addEventListener("updatefound",(()=>{!e.quiet&&console.log("Reloading page to make use of updated COOP/COEP Service Worker."),e.doReload()})),t.active&&!navigator.serviceWorker.controller&&e.doReload()}),(t=>{!e.quiet&&console.error("COOP/COEP Service Worker failed to register:",t)}))})()}
-    </script>
-    
     <style>
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
         }
+        
         body {
             width: 100%;
             height: 100vh;
             overflow: hidden;
             background: #000;
         }
+        
         #webvm-frame {
             width: 100%;
             height: 100%;
             border: none;
             display: block;
         }
+        
         #loading {
             position: absolute;
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
             color: #0f0;
-            font-family: monospace;
+            font-family: 'Courier New', monospace;
             font-size: 16px;
             text-align: center;
+            z-index: 10;
         }
+        
         #loading.hidden {
             display: none;
+        }
+        
+        .spinner {
+            margin: 20px auto;
+            width: 40px;
+            height: 40px;
+            border: 4px solid rgba(0, 255, 0, 0.1);
+            border-top: 4px solid #0f0;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
         }
     </style>
 </head>
 <body>
     <div id="loading">
+        <div class="spinner"></div>
         <p>⚡ Loading WebVM Terminal...</p>
         <p style="margin-top: 10px; font-size: 12px; color: #888;">
-            First load may take a moment
+            Booting Linux environment...
         </p>
     </div>
     
+    <!-- 
+        Path explanation:
+        Current: /os/apps/preinstalled/terminal.html
+        Target:  /index.html (WebVM root)
+        Path:    ../../../index.html (up 3 levels)
+    -->
     <iframe 
         id="webvm-frame"
         src="../../../index.html"
         allow="cross-origin-isolated"
+        sandbox="allow-same-origin allow-scripts allow-downloads allow-modals allow-forms"
         style="opacity: 0; transition: opacity 0.5s;">
     </iframe>
     
@@ -63,15 +85,37 @@
         const frame = document.getElementById('webvm-frame');
         const loading = document.getElementById('loading');
         
+        // Debug: Log what we're loading
+        console.log('Terminal app location:', window.location.href);
+        console.log('Loading WebVM from:', frame.src);
+        
+        // Hide loading when iframe loads
         frame.addEventListener('load', () => {
+            console.log('✅ WebVM loaded successfully');
             loading.classList.add('hidden');
             frame.style.opacity = '1';
         });
         
+        // Error handling
+        frame.addEventListener('error', (e) => {
+            console.error('❌ WebVM failed to load:', e);
+            loading.innerHTML = `
+                <div class="spinner"></div>
+                <p style="color: #f00;">❌ Failed to load WebVM</p>
+                <p style="margin-top: 10px; font-size: 12px; color: #888;">
+                    Check browser console for errors
+                </p>
+            `;
+        });
+        
+        // Fallback timeout (10 seconds)
         setTimeout(() => {
-            loading.classList.add('hidden');
-            frame.style.opacity = '1';
-        }, 8000);
+            if (!loading.classList.contains('hidden')) {
+                console.warn('⚠ WebVM load timeout - showing anyway');
+                loading.classList.add('hidden');
+                frame.style.opacity = '1';
+            }
+        }, 10000);
     </script>
 </body>
 </html>
