@@ -5,8 +5,9 @@
 </div>
 
 #### Deployment
-This is a static repository and therefore can be hosted on GitHub Pages by GitHub actions. Simply navigate to [.github/workflows/deploy.yml](.github/workflows/deploy.yml) and execute the workflow! Configuration is ```debian_mini``` ```950MB``` and - [x] deploy to pages 
-
+This is a static repository and therefore can be hosted on GitHub Pages by GitHub actions. Simply navigate to [.github/workflows/deploy.yml](.github/workflows/deploy.yml) and execute the workflow! Configuration for the workflow is ```debian_mini``` ```950MB``` and
+ - [x] deploy to pages 
+ - [ ] update pages deployment
 ## Backend Configuration
 Unfortunately, due to security restricions I cannot share the backend URL that I use. it is hosted on [Google Apps Scripts](https://script.google.com).
 
