@@ -11,12 +11,17 @@ This is a static repository and therefore can be hosted on GitHub Pages by GitHu
 #### Backend Configuration
 Unfortunately, due to security restricions I cannot share the backend URL that I use. It is hosted on [Google Apps Scripts](https://script.google.com) and is therefore easy to deploy.
 
-```Google apps scripts
+1. Create a new Apps Script at [script.google.com](https://script.google.com)
+2. Delete everything in ```Code.gs``` and replace it with this:
 
-
-
-heihfsef
+```Code.gs```
+```txt
+# code coming soon!
 ```
+3. Next, press Deploy then input ```deploy as me (your email here)``` and ```Anyone```
+4. Then, copy the URL and you are good to go!
+
+
 # My Guide :)
 
 ## Heading 2
