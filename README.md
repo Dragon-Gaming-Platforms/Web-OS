@@ -4,7 +4,9 @@
   <img src="os/assets/images/dragon-login.png" height="425" />
 </div>
 
+#### This is a 100% static repository that can be deployed from the root/ folder by GitHub Pages
 
+Unfortunately, due to security restricions I cannot share the backend URL myself. it is hosted on [Google Apps Scripts](https://script.google.com).
 
 
 
