@@ -1,0 +1,611 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Youtube Video Player</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    /* Prevent horizontal scroll globally */
+    body { 
+      background: #0f0f0f; 
+      color: #e5e5e5; 
+      font-family: 'Roboto', sans-serif; 
+      overflow-x: hidden; 
+    }
+    
+    /* Custom Scrollbar */
+    ::-webkit-scrollbar { width: 8px; height: 8px; }
+    ::-webkit-scrollbar-track { background: #0f0f0f; }
+    ::-webkit-scrollbar-thumb { background: #333; border-radius: 4px; }
+    
+    /* Main Player Wrapper */
+    .player-wrapper {
+      position: relative;
+      background: #000;
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+    }
+
+    /* Fullscreen styles */
+    .player-wrapper:fullscreen {
+      width: 100vw;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      background: #000;
+      border-radius: 0;
+    }
+    .player-wrapper:fullscreen .video-container { height: 75%; width: 100%; max-width: 100%; }
+    .player-wrapper:fullscreen .control-panel { 
+      height: 25%; 
+      background: rgba(0,0,0,0.95); 
+      border-top: 1px solid #333;
+      padding: 20px;
+      justify-content: center;
+    }
+
+    /* Floating Player (PiP) */
+    .mini-player {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      width: 400px;
+      max-width: calc(100vw - 40px); 
+      z-index: 9999;
+      background: #202020;
+      border-radius: 8px;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.6);
+      overflow: hidden;
+      display: none;
+      border: 1px solid #333;
+      resize: both;
+    }
+    .mini-player.active { display: flex; flex-direction: column; animation: slideUp 0.3s ease-out; }
+    
+    @keyframes slideUp { from { transform: translateY(100%); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+    
+    /* Progress Bar */
+    .progress-container {
+      position: relative;
+      height: 6px;
+      background: #333;
+      cursor: pointer;
+      transition: height 0.1s;
+      border-radius: 4px;
+    }
+    .progress-container:hover { height: 10px; }
+    
+    .progress-fill {
+      height: 100%;
+      background: #ff0000;
+      position: relative;
+      width: 0%;
+      border-radius: 4px;
+    }
+    
+    .progress-handle {
+      position: absolute;
+      right: -7px;
+      top: -3px;
+      width: 12px;
+      height: 12px;
+      background: red;
+      border-radius: 50%;
+      opacity: 0;
+      transition: opacity 0.2s;
+      box-shadow: 0 0 5px rgba(0,0,0,0.5);
+    }
+    .progress-container:hover .progress-handle { opacity: 1; }
+
+    .time-tooltip {
+      position: absolute;
+      bottom: 18px;
+      background: rgba(0,0,0,0.9);
+      color: white;
+      padding: 4px 8px;
+      border-radius: 4px;
+      font-size: 12px;
+      pointer-events: none;
+      transform: translateX(-50%);
+      display: none;
+      white-space: nowrap;
+      z-index: 10;
+    }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col">
+
+  <!-- Header -->
+  <header class="p-4 border-b border-gray-800 flex items-center justify-between">
+    <div class="flex items-center gap-2">
+      <i class="fab fa-youtube text-red-600 text-3xl"></i>
+      <span class="font-semibold text-lg tracking-tight">StreamView Pro</span>
+    </div>
+  </header>
+
+  <!-- Main Content -->
+  <main class="flex-1 container mx-auto p-4 grid lg:grid-cols-3 gap-6">
+    
+    <!-- Left Column -->
+    <div class="lg:col-span-2 flex flex-col gap-4 min-w-0">
+      
+      <!-- Input Group -->
+      <div class="flex gap-2">
+        <input type="text" id="url-input" placeholder="Paste YouTube URL or ID..." class="flex-1 min-w-0 bg-zinc-900 border border-zinc-700 rounded-lg px-4 py-3 text-sm focus:border-red-500 outline-none transition">
+        
+        <button id="load-btn" class="bg-red-600 hover:bg-red-700 px-6 py-3 rounded-lg font-medium text-sm transition flex items-center justify-center gap-2 shadow-lg shadow-red-900/20 shrink-0">
+          <i class="fas fa-play"></i> <span class="hidden sm:inline">Load</span>
+        </button>
+        
+        <button id="clear-btn" class="bg-zinc-700 hover:bg-zinc-600 px-4 py-3 rounded-lg font-medium text-sm transition flex items-center justify-center gap-2 shrink-0" title="Stop and clear">
+          <i class="fas fa-trash-alt"></i>
+        </button>
+      </div>
+
+      <!-- Player Wrapper -->
+      <div class="player-wrapper" id="player-wrapper">
+        
+        <!-- Video Area -->
+        <div class="video-container aspect-video bg-black relative" id="video-container">
+          <div id="placeholder" class="absolute inset-0 flex flex-col items-center justify-center bg-zinc-900 z-10">
+            <i class="fas fa-film text-6xl text-gray-700 mb-4"></i>
+            <p class="text-gray-500 text-sm">Enter a video link above</p>
+          </div>
+        </div>
+
+        <!-- Controls Area -->
+        <div class="control-panel bg-zinc-900 p-4 border-t border-zinc-800">
+          
+          <!-- Progress Bar -->
+          <div class="progress-container mb-4" id="progress-bar">
+            <div class="time-tooltip" id="time-tooltip">0:00</div>
+            <div class="progress-fill" id="progress-fill">
+              <div class="progress-handle"></div>
+            </div>
+          </div>
+
+          <!-- CONTROL ROW 1: Playback & Volume -->
+          <div class="flex items-center justify-between w-full mb-3">
+            <!-- Left: Playback Controls -->
+            <div class="flex items-center gap-2">
+              <button id="restart-btn" class="w-9 h-9 rounded-full hover:bg-zinc-700 flex items-center justify-center text-gray-300 hover:text-white shrink-0" title="Restart">
+                <i class="fas fa-redo text-sm"></i>
+              </button>
+              <button id="rewind-btn" class="w-9 h-9 rounded-full hover:bg-zinc-700 flex items-center justify-center text-gray-300 hover:text-white shrink-0" title="Back 10s">
+                <i class="fas fa-backward text-sm"></i>
+              </button>
+              <button id="play-btn" class="w-12 h-12 rounded-full bg-red-600 hover:bg-red-700 flex items-center justify-center text-white shadow-lg transform hover:scale-105 transition-all shrink-0">
+                <i class="fas fa-play" id="play-icon"></i>
+                <i class="fas fa-pause hidden" id="pause-icon"></i>
+              </button>
+              <button id="forward-btn" class="w-9 h-9 rounded-full hover:bg-zinc-700 flex items-center justify-center text-gray-300 hover:text-white shrink-0" title="Forward 10s">
+                <i class="fas fa-forward text-sm"></i>
+              </button>
+            </div>
+
+            <!-- Right: Volume & Time -->
+            <div class="flex items-center gap-3">
+              <div class="flex items-center gap-2 bg-zinc-800 rounded-full px-3 py-1">
+                <button id="mute-btn" class="text-gray-300 hover:text-white" title="Mute/Unmute">
+                  <i class="fas fa-volume-up" id="vol-icon"></i>
+                </button>
+                <input type="range" id="volume-slider" min="0" max="100" value="80" class="w-20 h-1 bg-zinc-600 rounded-lg appearance-none cursor-pointer accent-red-500">
+              </div>
+              
+              <div class="text-sm font-mono text-gray-300 bg-zinc-800 rounded px-2 py-1 hidden sm:block">
+                <span id="current-time">0:00</span>
+                <span class="text-gray-500">/</span>
+                <span id="duration">0:00</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- CONTROL ROW 2: Settings & View -->
+          <div class="flex items-center justify-end w-full gap-2 border-t border-zinc-800 pt-3">
+             <!-- Speed -->
+             <div class="flex items-center gap-2">
+                <span class="text-xs text-gray-500">Speed:</span>
+                <select id="speed-select" class="bg-zinc-800 border border-zinc-700 text-xs rounded px-2 py-1.5 outline-none cursor-pointer">
+                  <option value="0.5">0.5x</option>
+                  <option value="0.75">0.75x</option>
+                  <option value="1" selected>Normal</option>
+                  <option value="1.25">1.25x</option>
+                  <option value="1.5">1.5x</option>
+                  <option value="2">2x</option>
+                </select>
+             </div>
+
+             <div class="h-4 w-px bg-zinc-700"></div>
+
+             <!-- View Controls -->
+             <button id="popout-btn" class="w-9 h-9 rounded-lg bg-zinc-800 hover:bg-zinc-700 flex items-center justify-center border border-zinc-700 shrink-0" title="Floating Player">
+               <i class="fas fa-external-link-alt text-sm"></i>
+             </button>
+             
+             <button id="fullscreen-btn" class="w-9 h-9 rounded-lg bg-zinc-800 hover:bg-zinc-700 flex items-center justify-center border border-zinc-700 shrink-0" title="Fullscreen (F)">
+               <i class="fas fa-expand" id="fs-icon"></i>
+             </button>
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+    <!-- Right Column -->
+    <div class="flex flex-col gap-4">
+      <div class="bg-zinc-900 rounded-xl p-5 border border-zinc-800 shadow-lg">
+        <h2 class="font-bold text-lg mb-2" id="video-title">No Video Loaded</h2>
+        
+        <div class="flex flex-wrap gap-2 mb-4">
+          <a id="yt-link" href="#" target="_blank" class="flex-1 min-w-0 flex items-center justify-center gap-2 bg-zinc-800 hover:bg-zinc-700 p-2 rounded text-xs transition border border-zinc-700 opacity-50 pointer-events-none">
+            <i class="fab fa-youtube text-red-500"></i>
+            <span>Watch on YouTube</span>
+          </a>
+        </div>
+
+        <div class="border-t border-zinc-800 pt-4">
+          <h3 class="text-sm font-semibold mb-3 text-red-500">How to use</h3>
+          <div class="text-sm text-gray-400 space-y-3">
+            <p><strong>1. Load:</strong> Paste a link and click Load.</p>
+            <p><strong>2. Volume:</strong> Use the slider in the top control row.</p>
+            <p><strong>3. Fullscreen:</strong> Expand player. Press <strong>Esc</strong> to exit.</p>
+            <p><strong>4. Seek:</strong> Drag the red timeline bar.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- Mini Player -->
+  <div id="mini-player" class="mini-player">
+    <div class="flex items-center justify-between p-2 bg-zinc-900 cursor-move border-b border-zinc-700" id="mini-header">
+      <span class="text-xs text-gray-400 font-medium">Floating Player</span>
+      <button id="close-mini" class="text-gray-500 hover:text-white text-xs w-5 h-5 flex items-center justify-center rounded-full bg-black/20 hover:bg-black/50">×</button>
+    </div>
+    <div id="mini-wrapper" class="aspect-video bg-black relative"></div>
+  </div>
+
+  <!-- Logic -->
+  <script>
+    let player;
+    let isReady = false;
+    let isDragging = false;
+    let playerApiReady = false;
+
+    // Load YouTube API
+    const tag = document.createElement('script');
+    tag.src = "https://www.youtube.com/iframe_api";
+    document.body.appendChild(tag);
+
+    window.onYouTubeIframeAPIReady = () => {
+      playerApiReady = true;
+      console.log("YouTube API Ready");
+    };
+
+    const dom = {
+      wrapper: document.getElementById('player-wrapper'),
+      videoContainer: document.getElementById('video-container'),
+      input: document.getElementById('url-input'),
+      loadBtn: document.getElementById('load-btn'),
+      clearBtn: document.getElementById('clear-btn'),
+      playBtn: document.getElementById('play-btn'),
+      playIcon: document.getElementById('play-icon'),
+      pauseIcon: document.getElementById('pause-icon'),
+      restartBtn: document.getElementById('restart-btn'),
+      rewindBtn: document.getElementById('rewind-btn'),
+      forwardBtn: document.getElementById('forward-btn'),
+      muteBtn: document.getElementById('mute-btn'),
+      volIcon: document.getElementById('vol-icon'),
+      volSlider: document.getElementById('volume-slider'),
+      popoutBtn: document.getElementById('popout-btn'),
+      miniPlayer: document.getElementById('mini-player'),
+      miniWrapper: document.getElementById('mini-wrapper'),
+      closeMini: document.getElementById('close-mini'),
+      miniHeader: document.getElementById('mini-header'),
+      title: document.getElementById('video-title'),
+      ytLink: document.getElementById('yt-link'),
+      currentTime: document.getElementById('current-time'),
+      duration: document.getElementById('duration'),
+      progressBar: document.getElementById('progress-bar'),
+      progressFill: document.getElementById('progress-fill'),
+      timeTooltip: document.getElementById('time-tooltip'),
+      speedSelect: document.getElementById('speed-select'),
+      fullscreenBtn: document.getElementById('fullscreen-btn'),
+      fsIcon: document.getElementById('fs-icon'),
+      placeholder: document.getElementById('placeholder')
+    };
+
+    // --- Core Functions ---
+
+    function extractID(url) {
+      const reg = /(?:youtube\.com\/(?:watch\?v=|embed\/)|youtu\.be\/)([a-zA-Z0-9_-]{11})/;
+      const match = url.match(reg);
+      if (match) return match[1];
+      if (url.length === 11) return url;
+      return null;
+    }
+
+    function formatTime(s) {
+      if (isNaN(s)) return "0:00";
+      const m = Math.floor(s / 60);
+      const sec = Math.floor(s % 60);
+      return `${m}:${sec < 10 ? '0' : ''}${sec}`;
+    }
+
+    function stopPlayer() {
+      dom.input.value = "";
+      dom.title.textContent = "No Video Loaded";
+      dom.ytLink.href = "#";
+      dom.ytLink.classList.add('opacity-50', 'pointer-events-none');
+      dom.placeholder.style.display = 'flex';
+      
+      if (player && isReady) {
+        player.stopVideo();
+        player.clearVideo();
+      }
+      
+      dom.progressFill.style.width = '0%';
+      dom.currentTime.textContent = '0:00';
+      dom.duration.textContent = '0:00';
+      dom.playIcon.classList.remove('hidden');
+      dom.pauseIcon.classList.add('hidden');
+    }
+
+    function loadVideo(url) {
+      const id = extractID(url);
+      if (!id) {
+        alert("Invalid URL or ID.");
+        return;
+      }
+
+      if (!playerApiReady) {
+        dom.input.value = "Loading API...";
+        setTimeout(() => loadVideo(url), 500);
+        return;
+      }
+
+      dom.title.textContent = `Video ID: ${id}`;
+      dom.ytLink.href = `https://www.youtube.com/watch?v=${id}`;
+      dom.ytLink.classList.remove('opacity-50', 'pointer-events-none');
+      dom.input.value = id;
+
+      if (player && isReady) {
+        player.loadVideoById(id);
+        dom.placeholder.style.display = 'none';
+        return;
+      }
+
+      if (!document.getElementById('player-div')) {
+        const playerDiv = document.createElement('div');
+        playerDiv.id = 'player-div';
+        dom.videoContainer.appendChild(playerDiv);
+      }
+      
+      dom.placeholder.style.display = 'none';
+
+      player = new YT.Player('player-div', {
+        height: '100%',
+        width: '100%',
+        videoId: id,
+        playerVars: { 
+            'playsinline': 1, 
+            'controls': 0, 
+            'rel': 0, 
+            'modestbranding': 1,
+            'enablejsapi': 1
+        },
+        events: {
+          'onReady': (e) => {
+            isReady = true;
+            e.target.playVideo();
+            setInterval(updateUI, 500);
+            updateVolumeIcon();
+          },
+          'onStateChange': (e) => {
+            if (e.data === YT.PlayerState.PLAYING) {
+              dom.playIcon.classList.add('hidden');
+              dom.pauseIcon.classList.remove('hidden');
+            } else {
+              dom.playIcon.classList.remove('hidden');
+              dom.pauseIcon.classList.add('hidden');
+            }
+          }
+        }
+      });
+    }
+
+    function updateUI() {
+      if (!player || !isReady || isDragging) return;
+      const t = player.getCurrentTime();
+      const d = player.getDuration();
+      
+      if (dom.duration.textContent === '0:00' && d > 0) {
+         dom.duration.textContent = formatTime(d);
+      }
+      
+      dom.currentTime.textContent = formatTime(t);
+      
+      const percent = (t / d) * 100;
+      dom.progressFill.style.width = `${percent}%`;
+    }
+
+    function updateVolumeIcon() {
+      if (!player) return;
+      const vol = player.getVolume();
+      const isMuted = player.isMuted();
+      if (isMuted || vol === 0) dom.volIcon.className = 'fas fa-volume-mute';
+      else if (vol < 50) dom.volIcon.className = 'fas fa-volume-down';
+      else dom.volIcon.className = 'fas fa-volume-up';
+    }
+
+    // --- Event Listeners ---
+
+    dom.loadBtn.onclick = () => loadVideo(dom.input.value);
+    dom.clearBtn.onclick = stopPlayer;
+    dom.input.onkeypress = (e) => { if(e.key === 'Enter') loadVideo(dom.input.value); };
+
+    dom.playBtn.onclick = () => {
+      if (!player || !isReady) return;
+      const state = player.getPlayerState();
+      if (state === YT.PlayerState.PLAYING) player.pauseVideo();
+      else player.playVideo();
+    };
+
+    dom.restartBtn.onclick = () => { if(player && isReady) { player.seekTo(0); player.playVideo(); } };
+    dom.rewindBtn.onclick = () => player && isReady && player.seekTo(player.getCurrentTime() - 10, true);
+    dom.forwardBtn.onclick = () => player && isReady && player.seekTo(player.getCurrentTime() + 10, true);
+
+    // Volume Logic
+    dom.volSlider.oninput = (e) => {
+      if(player && isReady) {
+        player.setVolume(e.target.value);
+        if(player.isMuted()) player.unMute();
+        updateVolumeIcon();
+      }
+    };
+    
+    dom.muteBtn.onclick = () => {
+      if(!player || !isReady) return;
+      if(player.isMuted()) {
+        player.unMute();
+      } else {
+        player.mute();
+      }
+      updateVolumeIcon();
+    };
+
+    dom.speedSelect.onchange = (e) => player && isReady && player.setPlaybackRate(parseFloat(e.target.value));
+
+    dom.fullscreenBtn.onclick = () => {
+      if (!document.fullscreenElement) {
+        if (dom.wrapper.requestFullscreen) dom.wrapper.requestFullscreen();
+      } else {
+        if (document.exitFullscreen) document.exitFullscreen();
+      }
+    };
+
+    document.addEventListener('fullscreenchange', () => {
+      if (!document.fullscreenElement) {
+        dom.fsIcon.className = 'fas fa-expand';
+      } else {
+        dom.fsIcon.className = 'fas fa-compress';
+      }
+    });
+
+    dom.popoutBtn.onclick = () => {
+      if(!player || !isReady) return;
+      const iframe = player.getIframe();
+      if (iframe) {
+        dom.miniWrapper.appendChild(iframe);
+        dom.miniPlayer.classList.add('active');
+      }
+    };
+
+    dom.closeMini.onclick = () => {
+      if(!player || !isReady) return;
+      const iframe = player.getIframe();
+      if (iframe) {
+        dom.videoContainer.appendChild(iframe);
+        dom.miniPlayer.classList.remove('active');
+      }
+    };
+
+    // --- Progress Bar Logic ---
+
+    function seekToPosition(e) {
+      if (!player || !isReady) return;
+      const rect = dom.progressBar.getBoundingClientRect();
+      let pos = (e.clientX - rect.left) / rect.width;
+      pos = Math.max(0, Math.min(1, pos));
+      const seekTime = player.getDuration() * pos;
+      dom.progressFill.style.width = `${pos * 100}%`;
+      dom.currentTime.textContent = formatTime(seekTime);
+      player.seekTo(seekTime, true);
+    }
+
+    dom.progressBar.addEventListener('click', seekToPosition);
+    dom.progressBar.addEventListener('mousedown', (e) => {
+      if(player && isReady) {
+        isDragging = true;
+        dom.timeTooltip.style.display = 'block';
+      }
+    });
+
+    document.addEventListener('mousemove', (e) => {
+      if (!isDragging || !player) return;
+      const rect = dom.progressBar.getBoundingClientRect();
+      let pos = (e.clientX - rect.left) / rect.width;
+      pos = Math.max(0, Math.min(1, pos));
+      const seekTime = player.getDuration() * pos;
+      dom.progressFill.style.width = `${pos * 100}%`;
+      dom.timeTooltip.textContent = formatTime(seekTime);
+      dom.timeTooltip.style.left = `${pos * 100}%`;
+    });
+
+    document.addEventListener('mouseup', (e) => {
+      if (isDragging) {
+        isDragging = false;
+        dom.timeTooltip.style.display = 'none';
+        seekToPosition(e);
+      }
+    });
+
+    // --- Mini Player Drag ---
+    let isMiniDragging = false;
+    let miniOffset = { x: 0, y: 0 };
+
+    dom.miniHeader.onmousedown = (e) => {
+      isMiniDragging = true;
+      const rect = dom.miniPlayer.getBoundingClientRect();
+      miniOffset.x = e.clientX - rect.left;
+      miniOffset.y = e.clientY - rect.top;
+    };
+
+    document.addEventListener('mousemove', (e) => {
+      if (!isMiniDragging) return;
+      e.preventDefault();
+      dom.miniPlayer.style.left = `${e.clientX - miniOffset.x}px`;
+      dom.miniPlayer.style.top = `${e.clientY - miniOffset.y}px`;
+      dom.miniPlayer.style.right = 'auto';
+      dom.miniPlayer.style.bottom = 'auto';
+    });
+
+    document.addEventListener('mouseup', () => isMiniDragging = false);
+
+    // --- Keyboard Shortcuts ---
+    document.onkeydown = (e) => {
+      if(document.activeElement.tagName === 'INPUT' || document.activeElement.tagName === 'SELECT') return;
+      
+      switch(e.key.toLowerCase()) {
+        case ' ':
+          e.preventDefault();
+          dom.playBtn.click();
+          break;
+        case 'm':
+          dom.muteBtn.click();
+          break;
+        case 'r':
+          dom.restartBtn.click();
+          break;
+        case 'f':
+          dom.fullscreenBtn.click();
+          break;
+        case 'arrowleft':
+          dom.rewindBtn.click();
+          break;
+        case 'arrowright':
+          dom.forwardBtn.click();
+          break;
+        case 'escape':
+          if(document.fullscreenElement) document.exitFullscreen();
+          break;
+      }
+    };
+
+  </script>
+</body>
+</html>
