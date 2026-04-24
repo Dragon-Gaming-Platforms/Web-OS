@@ -7,14 +7,8 @@
 ## Table of Contents
 
 - [Deploy](#Deployment)
-- [Configure Backend](#run-webvm-locally-with-a-custom-debian-mini-disk-image)
-- [Example customization: Python3 REPL](#example-customization-python3-repl)
-- [How to use Claude AI](#how-to-use-claude-ai)
-- [Bugs and Issues](#bugs-and-issues)
-- [More links](#more-links)
-- [Thanks to...](#thanks-to)
-- [Versioning](#versioning)
-- [License](#license)
+- [Configure Backend](#Backend Configuration)
+
 
 ## Deployment
 This is a static repository and therefore can be hosted on GitHub Pages by GitHub actions. Simply navigate to [.github/workflows/deploy.yml](.github/workflows/deploy.yml) and execute the workflow! Configuration for the workflow is ```debian_mini``` ```950MB``` and
