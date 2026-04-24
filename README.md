@@ -15,8 +15,8 @@ Unfortunately, due to security restricions I cannot share the backend URL that I
 2. Delete everything in ```Code.gs``` and replace it with this:
 
 ```Code.gs```
-```md
-//code coming soon!
+```gas
+# code coming soon!
 ```
 3. Next, press Deploy then input ```deploy as me (your email here)``` and ```Anyone```
 4. Then, copy the URL and you are good to go!
