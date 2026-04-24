@@ -3,127 +3,208 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>WebVM Terminal</title>
+    <title>WebVM Terminal - Fireburst OS</title>
     
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
         
         body {
-            width: 100%;
+            width: 100vw;
             height: 100vh;
             overflow: hidden;
             background: #000;
+            font-family: monospace;
         }
         
         #webvm-frame {
+            position: absolute;
+            top: 0;
+            left: 0;
             width: 100%;
             height: 100%;
             border: none;
-            display: block;
         }
         
-        #loading {
+        #loading-overlay {
             position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: #000;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
             color: #0f0;
-            font-family: monospace;
-            text-align: center;
-            z-index: 10;
+            z-index: 1000;
+            transition: opacity 0.5s;
         }
         
-        #loading.hidden { display: none; }
+        #loading-overlay.fade-out {
+            opacity: 0;
+            pointer-events: none;
+        }
         
         .spinner {
-            margin: 20px auto;
-            width: 40px;
-            height: 40px;
+            width: 50px;
+            height: 50px;
             border: 4px solid rgba(0, 255, 0, 0.1);
             border-top: 4px solid #0f0;
             border-radius: 50%;
             animation: spin 1s linear infinite;
+            margin-bottom: 20px;
         }
         
         @keyframes spin {
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
         }
-
-        #activate-overlay {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.7);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            z-index: 50;
+        
+        .status-text {
+            font-size: 16px;
+            margin: 5px 0;
+        }
+        
+        .hint-text {
+            font-size: 12px;
+            color: #888;
+            margin-top: 20px;
         }
 
-        #activate-overlay.hidden { display: none; }
-
-        .activate-message {
+        /* Instruction banner */
+        #instruction-banner {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
             background: rgba(0, 255, 0, 0.1);
-            border: 2px solid #0f0;
-            padding: 30px 50px;
-            border-radius: 10px;
+            border-top: 1px solid #0f0;
+            padding: 10px;
+            text-align: center;
             color: #0f0;
-            font-family: monospace;
-            font-size: 18px;
+            font-size: 13px;
+            z-index: 10;
+            animation: pulse 2s infinite;
+        }
+
+        #instruction-banner.hidden {
+            display: none;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 0.7; }
+            50% { opacity: 1; }
         }
     </style>
 </head>
 <body>
-    <div id="loading">
+    <!-- Loading overlay -->
+    <div id="loading-overlay">
         <div class="spinner"></div>
-        <p>⚡ Loading WebVM...</p>
+        <div class="status-text">⚡ Booting Fireburst Terminal</div>
+        <div class="status-text" id="status-message">Initializing WebVM...</div>
+        <div class="hint-text">First load may take 15-30 seconds</div>
     </div>
 
-    <div id="activate-overlay" class="hidden">
-        <div class="activate-message">
-            🖱️ Click to activate terminal
-        </div>
+    <!-- Instruction banner -->
+    <div id="instruction-banner">
+        💡 <strong>Click inside the terminal below</strong> to start typing
     </div>
     
+    <!-- WebVM iframe -->
     <iframe 
         id="webvm-frame"
         src="../../../index.html"
-        allow="cross-origin-isolated"
-        style="opacity: 0; transition: opacity 0.5s;">
+        allow="cross-origin-isolated; clipboard-read; clipboard-write"
+        title="WebVM Terminal">
     </iframe>
     
     <script>
         const frame = document.getElementById('webvm-frame');
-        const loading = document.getElementById('loading');
-        const overlay = document.getElementById('activate-overlay');
-        
-        frame.addEventListener('load', () => {
-            loading.classList.add('hidden');
-            frame.style.opacity = '1';
-            
-            // Show activation overlay after WebVM loads
+        const loadingOverlay = document.getElementById('loading-overlay');
+        const statusMessage = document.getElementById('status-message');
+        const instructionBanner = document.getElementById('instruction-banner');
+
+        let loadStartTime = Date.now();
+        let hasLoaded = false;
+
+        // Update loading status
+        function updateStatus(message) {
+            statusMessage.textContent = message;
+            console.log('📟', message);
+        }
+
+        // Loading progress simulation
+        const loadingSteps = [
+            { time: 2000, message: 'Loading Linux kernel...' },
+            { time: 5000, message: 'Mounting filesystem...' },
+            { time: 8000, message: 'Starting system services...' },
+            { time: 12000, message: 'Almost ready...' }
+        ];
+
+        loadingSteps.forEach(step => {
             setTimeout(() => {
-                overlay.classList.remove('hidden');
-            }, 1000);
-        });
-        
-        // Activate on click
-        overlay.addEventListener('click', () => {
-            overlay.classList.add('hidden');
-            frame.focus();
-            frame.contentWindow.focus();
+                if (!hasLoaded) updateStatus(step.message);
+            }, step.time);
         });
 
-        // Keep iframe focused
-        setInterval(() => {
-            if (document.hasFocus() && !overlay.classList.contains('hidden')) {
-                frame.contentWindow.focus();
+        // When iframe loads
+        frame.addEventListener('load', () => {
+            hasLoaded = true;
+            const loadTime = ((Date.now() - loadStartTime) / 1000).toFixed(1);
+            console.log(`✅ WebVM loaded in ${loadTime}s`);
+            
+            updateStatus(`Ready! (${loadTime}s)`);
+            
+            // Fade out loading overlay
+            setTimeout(() => {
+                loadingOverlay.classList.add('fade-out');
+                
+                // Remove overlay after fade
+                setTimeout(() => {
+                    loadingOverlay.style.display = 'none';
+                }, 500);
+            }, 500);
+
+            // Hide instruction banner after user likely sees it
+            setTimeout(() => {
+                instructionBanner.classList.add('hidden');
+            }, 10000);
+        });
+
+        // Error handling
+        frame.addEventListener('error', (e) => {
+            console.error('❌ WebVM load error:', e);
+            updateStatus('❌ Failed to load WebVM');
+            loadingOverlay.style.background = '#300';
+        });
+
+        // Timeout after 30 seconds
+        setTimeout(() => {
+            if (!hasLoaded) {
+                console.warn('⚠️ WebVM load timeout');
+                updateStatus('⚠️ Loading is taking longer than expected...');
+                
+                // Force show anyway
+                setTimeout(() => {
+                    loadingOverlay.classList.add('fade-out');
+                    setTimeout(() => loadingOverlay.style.display = 'none', 500);
+                }, 3000);
             }
-        }, 1000);
+        }, 30000);
+
+        // Hide instruction banner when user clicks
+        document.addEventListener('click', () => {
+            instructionBanner.classList.add('hidden');
+        }, { once: true });
+
+        console.log('🖥️ Fireburst Terminal initialized');
+        console.log('📍 Loading WebVM from:', frame.src);
     </script>
 </body>
 </html>
