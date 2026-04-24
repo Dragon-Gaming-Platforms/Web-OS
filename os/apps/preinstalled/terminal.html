@@ -36,6 +36,7 @@
             font-size: 16px;
             text-align: center;
             z-index: 10;
+            pointer-events: none;
         }
         
         #loading.hidden {
@@ -56,6 +57,27 @@
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
         }
+
+        /* Click instruction overlay */
+        #click-hint {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: #0f0;
+            background: rgba(0, 0, 0, 0.8);
+            padding: 10px 20px;
+            border-radius: 5px;
+            font-family: monospace;
+            font-size: 12px;
+            z-index: 5;
+            opacity: 0.7;
+            transition: opacity 0.3s;
+        }
+
+        #click-hint.hidden {
+            display: none;
+        }
     </style>
 </head>
 <body>
@@ -66,26 +88,24 @@
             Booting Linux environment...
         </p>
     </div>
+
+    <div id="click-hint">
+        💡 Click inside the terminal to start typing
+    </div>
     
-    <!-- 
-        Path explanation:
-        Current: /os/apps/preinstalled/terminal.html
-        Target:  /index.html (WebVM root)
-        Path:    ../../../index.html (up 3 levels)
-    -->
     <iframe 
         id="webvm-frame"
         src="../../../index.html"
         allow="cross-origin-isolated"
-        sandbox="allow-same-origin allow-scripts allow-downloads allow-modals allow-forms"
+        sandbox="allow-same-origin allow-scripts allow-downloads allow-modals allow-forms allow-pointer-lock"
         style="opacity: 0; transition: opacity 0.5s;">
     </iframe>
     
     <script>
         const frame = document.getElementById('webvm-frame');
         const loading = document.getElementById('loading');
+        const clickHint = document.getElementById('click-hint');
         
-        // Debug: Log what we're loading
         console.log('Terminal app location:', window.location.href);
         console.log('Loading WebVM from:', frame.src);
         
@@ -94,6 +114,30 @@
             console.log('✅ WebVM loaded successfully');
             loading.classList.add('hidden');
             frame.style.opacity = '1';
+            
+            // Try to focus the iframe after a short delay
+            setTimeout(() => {
+                frame.contentWindow.focus();
+                console.log('🎯 Focused iframe');
+                
+                // Hide hint after first interaction
+                setTimeout(() => {
+                    clickHint.classList.add('hidden');
+                }, 5000);
+            }, 1000);
+        });
+        
+        // Focus iframe when user clicks anywhere in the parent window
+        document.addEventListener('click', () => {
+            frame.contentWindow.focus();
+            clickHint.classList.add('hidden');
+        });
+
+        // Also focus when parent window gets focus
+        window.addEventListener('focus', () => {
+            if (frame.contentWindow) {
+                frame.contentWindow.focus();
+            }
         });
         
         // Error handling
@@ -108,7 +152,7 @@
             `;
         });
         
-        // Fallback timeout (10 seconds)
+        // Fallback timeout
         setTimeout(() => {
             if (!loading.classList.contains('hidden')) {
                 console.warn('⚠ WebVM load timeout - showing anyway');
