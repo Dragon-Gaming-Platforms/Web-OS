@@ -6,11 +6,7 @@
     <title>WebVM Terminal</title>
     
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
         
         body {
             width: 100%;
@@ -32,16 +28,12 @@
             left: 50%;
             transform: translate(-50%, -50%);
             color: #0f0;
-            font-family: 'Courier New', monospace;
-            font-size: 16px;
+            font-family: monospace;
             text-align: center;
             z-index: 10;
-            pointer-events: none;
         }
         
-        #loading.hidden {
-            display: none;
-        }
+        #loading.hidden { display: none; }
         
         .spinner {
             margin: 20px auto;
@@ -58,108 +50,80 @@
             100% { transform: rotate(360deg); }
         }
 
-        /* Click instruction overlay */
-        #click-hint {
+        #activate-overlay {
             position: absolute;
-            bottom: 20px;
-            left: 50%;
-            transform: translateX(-50%);
-            color: #0f0;
-            background: rgba(0, 0, 0, 0.8);
-            padding: 10px 20px;
-            border-radius: 5px;
-            font-family: monospace;
-            font-size: 12px;
-            z-index: 5;
-            opacity: 0.7;
-            transition: opacity 0.3s;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            z-index: 50;
         }
 
-        #click-hint.hidden {
-            display: none;
+        #activate-overlay.hidden { display: none; }
+
+        .activate-message {
+            background: rgba(0, 255, 0, 0.1);
+            border: 2px solid #0f0;
+            padding: 30px 50px;
+            border-radius: 10px;
+            color: #0f0;
+            font-family: monospace;
+            font-size: 18px;
         }
     </style>
 </head>
 <body>
     <div id="loading">
         <div class="spinner"></div>
-        <p>⚡ Loading WebVM Terminal...</p>
-        <p style="margin-top: 10px; font-size: 12px; color: #888;">
-            Booting Linux environment...
-        </p>
+        <p>⚡ Loading WebVM...</p>
     </div>
 
-    <div id="click-hint">
-        💡 Click inside the terminal to start typing
+    <div id="activate-overlay" class="hidden">
+        <div class="activate-message">
+            🖱️ Click to activate terminal
+        </div>
     </div>
     
     <iframe 
         id="webvm-frame"
         src="../../../index.html"
         allow="cross-origin-isolated"
-        sandbox="allow-same-origin allow-scripts allow-downloads allow-modals allow-forms allow-pointer-lock"
         style="opacity: 0; transition: opacity 0.5s;">
     </iframe>
     
     <script>
         const frame = document.getElementById('webvm-frame');
         const loading = document.getElementById('loading');
-        const clickHint = document.getElementById('click-hint');
+        const overlay = document.getElementById('activate-overlay');
         
-        console.log('Terminal app location:', window.location.href);
-        console.log('Loading WebVM from:', frame.src);
-        
-        // Hide loading when iframe loads
         frame.addEventListener('load', () => {
-            console.log('✅ WebVM loaded successfully');
             loading.classList.add('hidden');
             frame.style.opacity = '1';
             
-            // Try to focus the iframe after a short delay
+            // Show activation overlay after WebVM loads
             setTimeout(() => {
-                frame.contentWindow.focus();
-                console.log('🎯 Focused iframe');
-                
-                // Hide hint after first interaction
-                setTimeout(() => {
-                    clickHint.classList.add('hidden');
-                }, 5000);
+                overlay.classList.remove('hidden');
             }, 1000);
         });
         
-        // Focus iframe when user clicks anywhere in the parent window
-        document.addEventListener('click', () => {
+        // Activate on click
+        overlay.addEventListener('click', () => {
+            overlay.classList.add('hidden');
+            frame.focus();
             frame.contentWindow.focus();
-            clickHint.classList.add('hidden');
         });
 
-        // Also focus when parent window gets focus
-        window.addEventListener('focus', () => {
-            if (frame.contentWindow) {
+        // Keep iframe focused
+        setInterval(() => {
+            if (document.hasFocus() && !overlay.classList.contains('hidden')) {
                 frame.contentWindow.focus();
             }
-        });
-        
-        // Error handling
-        frame.addEventListener('error', (e) => {
-            console.error('❌ WebVM failed to load:', e);
-            loading.innerHTML = `
-                <div class="spinner"></div>
-                <p style="color: #f00;">❌ Failed to load WebVM</p>
-                <p style="margin-top: 10px; font-size: 12px; color: #888;">
-                    Check browser console for errors
-                </p>
-            `;
-        });
-        
-        // Fallback timeout
-        setTimeout(() => {
-            if (!loading.classList.contains('hidden')) {
-                console.warn('⚠ WebVM load timeout - showing anyway');
-                loading.classList.add('hidden');
-                frame.style.opacity = '1';
-            }
-        }, 10000);
+        }, 1000);
     </script>
 </body>
 </html>
